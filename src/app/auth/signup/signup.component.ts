@@ -28,9 +28,6 @@ import {Router} from "@angular/router";
 
       </div>
     </div>
-    <p>
-      signup works!
-    </p>
   `,
   styleUrls: ['./signup.component.scss']
 })
