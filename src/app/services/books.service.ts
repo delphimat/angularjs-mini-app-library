@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { Subject} from "rxjs";
-import { Book} from "../models/Book_model";
+import { Book} from "../models/book.model";
 import * as firebase from "firebase";
 import DataSnapshot = firebase.database.DataSnapshot;
 
@@ -55,18 +55,53 @@ export class BooksService {
     this.emitBooks();
   }
 
-  removeBook(book: Book) {
-    const bookIndexToRemove = this.books.findIndex(
-      (bookEl) => {
-        if (bookEl === book) {
-          return true;
-        }
+  uploadFile(file: File) {
+    return new Promise(
+      (resolve, reject) => {
+        const almostUniqueFileName = Date.now().toString();
+        const upload = firebase.storage().ref().child('images/'+almostUniqueFileName+file).put(file)
+
+        upload.on(firebase.storage.TaskEvent.STATE_CHANGED,
+          () => {
+            console.log('Chargement…');
+          },
+          (error) => {
+            console.log('Erreur de chargement ! : ' + error);
+            reject();
+          },
+          () => {
+            resolve(upload.snapshot.ref.getDownloadURL());
+          }
+        );
       }
     );
-
-    this.books.splice(bookIndexToRemove, 1);
-    this.saveBooks();
-    this.emitBooks();
   }
 
+
+  removeBook(book: Book) {
+    if (book.photo) {
+      const storageRef = firebase.storage().refFromURL(book.photo);
+      storageRef.delete().then(
+        () => {
+          console.log('Photo removed!');
+        },
+        (error) => {
+          console.log('Could not remove photo! : ' + error);
+        }
+      );
+
+      const bookIndexToRemove = this.books.findIndex(
+        (bookEl) => {
+          if(bookEl === book) {
+            return true;
+          }
+        }
+      );
+
+      this.books.splice(bookIndexToRemove, 1);
+      this.saveBooks();
+      this.emitBooks();
+
+    }
+  }
 }
